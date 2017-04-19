@@ -11,25 +11,32 @@ type Job struct {
 	text   string
 }
 
-func outputText(j *Job, goGroup *sync.WaitGroup) {
+func outputText(j *Job, wg *sync.WaitGroup) {
+	// defer wg.Done()
 	for j.i < j.max {
 		time.Sleep(1 * time.Millisecond)
 		fmt.Println(j.text)
 		j.i++
 	}
-	goGroup.Done()
+	// Done tells the program the operation is complete
+	wg.Done()
 }
 
 func main() {
-	goGroup := new(sync.WaitGroup)
+	// wg is used to wait for the program to finish
+	wg := new(sync.WaitGroup)
 	fmt.Println("Starting")
 
 	hello := &Job{0, 3, "Hello"}
 	world := &Job{0, 5, "World"}
 
-	go outputText(hello, goGroup)
-	go outputText(world, goGroup)
+	// Run two goroutines
+	go outputText(hello, wg)
+	go outputText(world, wg)
 
-	goGroup.Add(2)
-	goGroup.Wait()
+	// Add a count of two, one for each goroutine
+	wg.Add(2)
+
+	// Wait for the goroutine to complete
+	wg.Wait()
 }

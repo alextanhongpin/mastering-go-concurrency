@@ -1,5 +1,5 @@
 // This sample program demonstrates how to create goroutines and
-// how the scheduler behaves
+// how the scheduler behave
 
 package main
 
@@ -9,21 +9,21 @@ import (
 	"sync"
 )
 
-// main is the enty point for all Go programs
+// main is the entry point for all Go programs.
 func main() {
-	// Allocate 1 logical processor for the scheduler to use
+	// Allocate 1 logical processor for the scheduler to use.
 	runtime.GOMAXPROCS(1)
 
-	// wg is used to wait for the program to finish
-	// Add a count of two, one for each goroutine
+	// wg is used to wait for the program to finish.
+	// Add a count of two, one for each goroutines
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	fmt.Println("Start Goroutines")
+	fmt.Println("Start goroutines")
 
-	// Declare an anonymous function and create a goroutine
+	// Declare an anonymous function and create a goroutine.
 	go func() {
-		// Schedule the call to Done to tell main we are done
+		// Schedule the call to Done to tell main we are done.
 		defer wg.Done()
 
 		// Display the alphabet three times
@@ -34,9 +34,9 @@ func main() {
 		}
 	}()
 
-	// Declare an anonymouse function and create a goroutine
+	// Declare an anonymous function and create a goroutine.
 	go func() {
-		// Schedule the call to Done to tell main we are done
+		// Schedule the call to Done to tell main we are done.
 		defer wg.Done()
 
 		// Display the alphabet three times
@@ -51,5 +51,5 @@ func main() {
 	fmt.Println("Waiting to finish")
 	wg.Wait()
 
-	fmt.Println("\nTerminating program")
+	fmt.Println("\nTerminating Program")
 }
