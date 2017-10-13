@@ -1,70 +1,70 @@
 package main
 
-import (
-	"fmt"
-	"math"
-	"math/rand"
-	"time"
-)
+import "log"
 
 func main() {
+	// Write a program that finds a prime number from 50.000 and return them
+	// through channels. Spawn it for multiple channels
 
-	isPrime := func(value int) bool {
-		for i := 2; i <= int(math.Floor(math.Sqrt(float64(value)))); i++ {
-			if value%i == 0 {
-				return false
-			}
-		}
-		return value > 1
-	}
+	// numCPUs := runtime.NumCPU()
 
-	take := func(
+	onlyEven := func(
 		done <-chan interface{},
-		valueStream <-chan interface{},
-		num int,
-	) <-chan interface{} {
-		takeStream := make(chan interface{})
-		go func() {
-			defer close(takeStream)
-			for i := 0; i < num; i++ {
-				select {
-				case <-done:
-					return
-				case takeStream <- <-valueStream:
-				}
-			}
-		}()
-		return takeStream
-	}
-
-	primeFinder := func(
-		done <-chan interface{},
-		valueStream <-chan interface{},
-	) <-chan interface{} {
-		takeStream := make(chan interface{})
+		takeStream <-chan int,
+	) <-chan int {
+		valueStream := make(chan int)
 		go func() {
 			defer close(valueStream)
-			for v := range valueStream {
+			for v := range takeStream {
 				select {
 				case <-done:
 					return
-				case takeStream <- <-valueStream:
+				case valueStream <- v * 2:
 				}
 			}
 		}()
-		return takeStream
+		return valueStream
 	}
 
-	rand := func() interface{} { return rand.Intn(500000) }
+	gen := func(
+		done <-chan interface{},
+		limit int,
+	) <-chan interface{} {
+		valueStream := make(chan interface{})
+		go func() {
+			defer close(valueStream)
+			for i := 0; i < limit; i++ {
+				select {
+				case <-done:
+					return
+				case valueStream <- i:
+				}
+			}
+		}()
+		return valueStream
+	}
+
+	toInt := func(
+		done <-chan interface{},
+		takeStream <-chan interface{},
+	) <-chan int {
+		valueStream := make(chan int)
+		go func() {
+			defer close(valueStream)
+			for v := range takeStream {
+				select {
+				case <-done:
+					return
+				case valueStream <- v.(int):
+				}
+			}
+		}()
+		return valueStream
+	}
 
 	done := make(chan interface{})
-	defer close(done)
 
-	start := time.Now()
-
-	randIntStream := toInt(done, repeatFunc(done, rand))
-	fmt.Println("Primes:")
-	for prime := range take(done, primeFinder(done, randIntStream), 10) {
-		fmt.Println(prime)
+	for v := range onlyEven(done, toInt(done, gen(done, 100))) {
+		log.Printf("%#v\n", v)
 	}
 }
