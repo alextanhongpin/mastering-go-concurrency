@@ -8,9 +8,6 @@ import (
 
 func main() {
 
-	// log.SetFlags(log.Ltime | log.LUTC)
-	// log.SetOutput(os.Stdout)
-
 	go func() {
 		time.Sleep(1 * time.Second)
 		log.Println("hello 1")
