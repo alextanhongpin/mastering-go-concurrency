@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -62,18 +63,27 @@ func main() {
 		return multiplierStream
 	}
 
-	sink := func(source <-chan StreamResult) {
-		for i := 0; i < 10; i++ {
+	sink := func(source <-chan StreamResult, upperBoundary int, thresholdPercentage float64) {
+		// SLA, only 1% error can be tolerated
+		maxAllowedError := int(math.Ceil(float64(upperBoundary) * thresholdPercentage))
+		count := 0
+
+		for i := 0; i < upperBoundary; i++ {
 			result := <-source
 
 			// Handle error silently
 			if result.err != nil {
-				fmt.Printf("got error: %s\n", result.err.Error())
+				count++
+				if count > maxAllowedError {
+					fmt.Printf("error threshold exceeded: %d, completed: %d/%d\n", count, i, upperBoundary)
+					break
+				}
+				fmt.Printf("tolerated error: %s\n", result.err.Error())
 				continue
 			}
 
 			// Print out the value for debugging
-			fmt.Printf("got %d: %d\n", i, result.value)
+			fmt.Printf("got %d, completed: %d/%d\n", result.value, i, upperBoundary)
 		}
 	}
 
@@ -84,7 +94,7 @@ func main() {
 
 	// Multiply valid values (>50) by 100
 	p2 := processor(ctx, p1)
-	sink(p2)
+	sink(p2, 100, 0.25)
 
 	// Terminate all the pipeline
 	cancel()
