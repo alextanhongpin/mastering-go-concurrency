@@ -14,36 +14,32 @@ func main() {
 
 	numTourists := 25
 	maxOnline := 8
+
 	var wg sync.WaitGroup
 	wg.Add(numTourists)
 
 	done := make(chan interface{}, maxOnline)
 	defer close(done)
 
-	kv := make(map[int]int)
-	var mu sync.Mutex
 	online := func(done chan interface{}, wg *sync.WaitGroup, i int) {
-		mu.Lock()
-		kv[i] = i
-		mu.Unlock()
-		if len(kv) == maxOnline {
-			for j := 0; j < numTourists; j++ {
-				mu.Lock()
-				v, ok := kv[j+1]
-				mu.Unlock()
-				if ok && v != i {
-					log.Printf("Tourist %d waiting for turn.\n", j)
-				}
+		kv := make(map[int]int, 1)
+	loop:
+		select {
+		case done <- i:
+			log.Printf("Tourist %d is online.\n", i)
+			duration := 5 + rand.Intn(10)
+			time.Sleep(time.Duration(duration) * time.Second)
+			log.Printf("Tourist %d is done, having spent %d seconds online.\n", i, duration)
+			<-done
+			wg.Done()
+		default:
+			_, ok := kv[i]
+			if !ok {
+				kv[i] = i
+				log.Printf("Tourist %d waiting for turn.\n", i)
 			}
+			goto loop
 		}
-
-		done <- i
-		log.Printf("Tourist %d is online.\n", i)
-		duration := 5 + rand.Intn(10)
-		time.Sleep(time.Duration(duration) * time.Second)
-		log.Printf("Tourist %d is done, having spent %d seconds online.\n", i, duration)
-		<-done
-		wg.Done()
 
 	}
 
