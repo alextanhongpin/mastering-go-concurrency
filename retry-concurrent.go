@@ -51,15 +51,15 @@ func main() {
 	worker := func(i int, done <-chan interface{}, count chan interface{}, jobs chan Job) {
 
 		go func() {
-			defer close(jobs)
-			defer close(count)
+			// defer close(jobs)
+			// defer close(count)
 			for {
 				select {
 				case <-done:
 					return
 				case j, ok := <-jobs:
 					if !ok {
-						log.Println("closing job channels", j, i)
+						log.Println("closing job channels")
 						return
 					}
 					if err := j.run(); err != nil {
@@ -80,7 +80,7 @@ func main() {
 
 	}
 
-	cleaner := func(done, count <-chan interface{}) {
+	cleaner := func(done <-chan interface{}, count chan interface{}, jobs chan Job) {
 		var wg sync.WaitGroup
 		wg.Add(10)
 		go func() {
@@ -93,6 +93,8 @@ func main() {
 					wg.Done()
 				}
 			}
+			close(count)
+			close(jobs)
 		}()
 		wg.Wait()
 		log.Println("Complete")
@@ -106,6 +108,6 @@ func main() {
 	for i := 0; i < concurrent; i++ {
 		worker(i, done, count, prod)
 	}
-	cleaner(done, count)
+	cleaner(done, count, prod)
 	log.Println("done")
 }
