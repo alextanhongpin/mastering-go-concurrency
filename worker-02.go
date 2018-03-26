@@ -33,6 +33,7 @@ func main() {
 	// Create worker channels to store their job
 	workers := make([]<-chan interface{}, maxWorkers)
 
+	// NOTE: See the worker-03.go example, this step is unnecessary
 	// For each worker...
 	for i := 0; i < maxWorkers; i++ {
 		// Get the start index
@@ -54,7 +55,7 @@ func main() {
 	wg.Add(len(urls))
 	go func() {
 		// Chain the fan-out with throttle
-		for v := range throttle(ctx, maxConcurrency, fanOut(ctx, workers...)) {
+		for v := range throttle(ctx, maxConcurrency, fanIn(ctx, workers...)) {
 			defer wg.Done()
 			// Intentionally delay to view the throttling in action
 			time.Sleep(time.Duration(rand.Intn(250)+50) * time.Millisecond)
@@ -104,7 +105,7 @@ func throttle(ctx context.Context, maxConcurrency int, in <-chan interface{}) <-
 	return outStream
 }
 
-func fanOut(ctx context.Context, in ...<-chan interface{}) <-chan interface{} {
+func fanIn(ctx context.Context, in ...<-chan interface{}) <-chan interface{} {
 	outStream := make(chan interface{})
 	var wg sync.WaitGroup
 	wg.Add(len(in))
