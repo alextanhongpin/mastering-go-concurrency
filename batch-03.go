@@ -17,7 +17,7 @@ type Batch struct {
 	MaxBatchSize int
 	Queue        []int
 	Duration     time.Duration
-	Out          chan interface{}
+	Out          chan []int
 }
 
 func (b *Batch) Process() {
@@ -25,9 +25,10 @@ func (b *Batch) Process() {
 		return
 	}
 	// Process in batch
-	for _, v := range b.Queue {
-		b.Out <- v
-	}
+	// for _, v := range b.Queue {
+	// Send the whole batch to the channel
+	b.Out <- b.Queue
+	// }
 	// Empty queue
 	b.Queue = []int{}
 }
@@ -82,7 +83,7 @@ func NewBatch(maxBatchSize, duration int) *Batch {
 		MaxBatchSize: maxBatchSize,
 		Queue:        []int{},
 		Duration:     time.Duration(duration) * time.Millisecond,
-		Out:          make(chan interface{}),
+		Out:          make(chan []int),
 	}
 }
 
@@ -120,9 +121,13 @@ func main() {
 	go func() {
 		var sum int
 		for o := range batch.Out {
-			defer wg.Done()
 			log.Println("got", o)
-			sum++
+			for _, v := range o {
+				defer wg.Done()
+
+				log.Println("each", v)
+				sum++
+			}
 		}
 		log.Printf("processed %d items\n", sum)
 	}()
