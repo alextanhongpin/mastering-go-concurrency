@@ -104,10 +104,10 @@ func main() {
 			fmt.Println("Done!")
 			break
 		}
-		select {
-		case sC := <-statusChannel:
-			fmt.Println("Message on StatusChannel:", sC)
-		}
+		// select {
+		// case sC := <-statusChannel:
+		// 	fmt.Println("Message on StatusChannel:", sC)
+		// }
 	}
 
 }
