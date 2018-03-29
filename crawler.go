@@ -1,3 +1,4 @@
+// This program demonstrates how to write a web crawler with a single worker and multiple concurrent workers
 package main
 
 import (
@@ -123,3 +124,22 @@ func toStream(ctx context.Context, urls ...string) <-chan interface{} {
 
 	return outStream
 }
+
+// 2018/03/29 11:47:50 single worker done 5943
+// 2018/03/29 11:47:50 single worker done 5943
+// 2018/03/29 11:47:51 single worker done 5943
+// 2018/03/29 11:47:51 single worker done 5943
+// 2018/03/29 11:47:52 single worker done 5943
+// 2018/03/29 11:47:52 single worker completed in 3.005570534s
+// 2018/03/29 11:47:52
+// 2018/03/29 11:47:53 processed by worker 3
+// 2018/03/29 11:47:53 multi worker done 5943
+// 2018/03/29 11:47:53 processed by worker 1
+// 2018/03/29 11:47:53 multi worker done 5943
+// 2018/03/29 11:47:53 processed by worker 0
+// 2018/03/29 11:47:53 multi worker done 5943
+// 2018/03/29 11:47:53 processed by worker 2
+// 2018/03/29 11:47:53 multi worker done 5943
+// 2018/03/29 11:47:53 processed by worker 3
+// 2018/03/29 11:47:53 multi worker done 5943
+// 2018/03/29 11:47:53 multi workers completed in 1.140311726s
