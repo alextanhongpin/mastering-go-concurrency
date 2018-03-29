@@ -52,10 +52,10 @@ func main() {
 type GenericFunc func(interface{}) interface{}
 
 type Stream interface {
-	Pipe(GenericFunc) *Chain
+	Pipe(GenericFunc) Stream
+	Throttle() Stream
+	Pool() Stream
 	Drain(func(interface{}))
-	Throttle() *Chain
-	Pool() *Chain
 }
 
 type Chain struct {
