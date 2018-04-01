@@ -24,18 +24,21 @@ func main() {
 		Throttle(5, true).
 		Pipe(func(in interface{}) interface{} {
 			v := in.(int)
+			// time.Sleep(time.Duration(rand.Intn(50)+50) * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 			return v * 2
 		}).
-		Pool(numWorkers, true, func(in interface{}) interface{} {
-			v := in.(int)
-			// Simulate slow worker
-			time.Sleep(time.Duration(rand.Intn(150)+150) * time.Millisecond)
-			return v - 50
-		}).
+		// Pool(numWorkers, true, func(in interface{}) interface{} {
+		// 	v := in.(int)
+		// 	// Simulate slow worker
+		// 	time.Sleep(time.Duration(rand.Intn(150)+150) * time.Millisecond)
+		// 	return v - 50
+		// }).
 		Pipe(func(in interface{}) interface{} {
 			v := in.(int)
 			// Simulate slow output, which will throttle the input
-			time.Sleep(time.Duration(rand.Intn(150)+150) * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
+			// time.Sleep(time.Duration(rand.Intn(150)+150) * time.Millisecond)
 			return v + 10
 		}).
 		Drain(func(in interface{}) {
