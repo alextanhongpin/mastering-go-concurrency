@@ -19,19 +19,17 @@ var wg sync.WaitGroup
 var v1 int
 
 func readURLs(statusChannel chan int, textChannel chan string) {
-	time.Sleep(time.Millisecond * 1)
+	time.Sleep(time.Millisecond * 100)
 	fmt.Println("Grabbing", len(urls), "urls")
 	for i := 0; i < totalURLCount; i++ {
-		fmt.Println("Url", i, urls[i])
+		fmt.Println("Url:", urls[i])
 		resp, _ := http.Get(urls[i])
 		text, err := ioutil.ReadAll(resp.Body)
-
-		textChannel <- string(text)
-
 		if err != nil {
 			fmt.Println("No HTML body")
 		}
 
+		textChannel <- string(text)
 		statusChannel <- 0
 	}
 }
@@ -44,6 +42,7 @@ func addToScrapedText(textChannel chan string, processChannel chan bool) {
 				// Hang on
 			}
 			if pC == false {
+				fmt.Println("closing channels")
 				close(textChannel)
 				close(processChannel)
 			}
@@ -57,8 +56,8 @@ func evaluateStatus(statusChannel chan int, textChannel chan string, processChan
 	for {
 		select {
 		case status := <-statusChannel:
-			fmt.Println(urlsProcessed, totalURLCount)
 			urlsProcessed++
+			fmt.Println(urlsProcessed, totalURLCount, status)
 			if status == 0 {
 				fmt.Println("Got url")
 			}
@@ -104,10 +103,10 @@ func main() {
 			fmt.Println("Done!")
 			break
 		}
-		select {
-		case sC := <-statusChannel:
-			fmt.Println("Message on StatusChannel:", sC)
-		}
+		// select {
+		// case sC := <-statusChannel:
+		// 	fmt.Println("Message on StatusChannel:", sC)
+		// }
 	}
 
 }
