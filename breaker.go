@@ -13,16 +13,19 @@ import (
 
 func main() {
 	numWorkers := 5
+
+	var mu sync.Mutex
+	cond := sync.NewCond(&mu)
+
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
-
 	defer cancel()
 
-	pause := make(chan interface{}, numWorkers)
+	var pause bool
 
 	counter := 0
 	start := time.Now()
-	for i := range worker(ctx, generator(ctx, 100), numWorkers, pause) {
+	for i := range worker(ctx, generator(ctx, 100), numWorkers, cond, pause) {
 		counter++
 		log.Println(i)
 	}
@@ -48,31 +51,49 @@ func generator(ctx context.Context, limit int) <-chan interface{} {
 	return outStream
 }
 
-func worker(ctx context.Context, inStream <-chan interface{}, numWorkers int, pause chan interface{}) <-chan interface{} {
+func worker(ctx context.Context, inStream <-chan interface{}, numWorkers int, cond *sync.Cond, pause bool) <-chan interface{} {
 
 	outStream := make(chan interface{})
 
 	var wg sync.WaitGroup
 	wg.Add(numWorkers)
 
-	failIndex := rand.Intn(100)
+	failIndex := rand.Intn(50)
 	multiplex := func(index int, in <-chan interface{}) {
+		log.Println("starting multiplex", index)
 		for i := range in {
-			// Assuming each operation takes roughly 10 ms
+			// Assuming each operation takes roughly 100 ms
+			time.Sleep(time.Duration(rand.Intn(50)+50) * time.Millisecond)
+
+			// Fake failures
 			if i == failIndex {
-				log.Println("error occurred")
-				// Fill up all the workers
-				for j := 0; j < numWorkers; j++ {
-					pause <- j
-				}
+				cond.L.Lock()
+				// Set pause to true
+				pause = i == failIndex
+				log.Println("worker", index, "encountered error at", i)
+				cond.L.Unlock()
+
+				// Retry after 5 seconds
+				go func() {
+					log.Println("spending five seconds to recover")
+					time.Sleep(5 * time.Second)
+
+					// Reset (do I need to lock here too?)
+					pause = false
+					cond.Broadcast()
+				}()
 			}
-			time.Sleep(10 * time.Millisecond)
+
+			cond.L.Lock()
+			// While pause is true...
+			for pause {
+				// This does not consume cpu cycle. It suspends the current goroutines.
+				log.Println("worker", index, "is paused")
+				cond.Wait()
+			}
+			cond.L.Unlock()
+
 			select {
-			case <-pause:
-				log.Println("pausing worker", index)
-				time.Sleep(1 * time.Second)
-				log.Println("done pausing worker", index)
-				outStream <- i
 			case <-ctx.Done():
 				return
 			case outStream <- i:
@@ -82,6 +103,7 @@ func worker(ctx context.Context, inStream <-chan interface{}, numWorkers int, pa
 	}
 
 	for i := 0; i < numWorkers; i++ {
+		log.Println("executing workers", i)
 		go multiplex(i, inStream)
 	}
 
