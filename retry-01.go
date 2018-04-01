@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
 func main() {
 
 	retry := func(maxRetry int, maxDuration, sleep time.Duration, callback func() error) error {
@@ -32,7 +36,6 @@ func main() {
 		return nil
 	}
 
-	rand.Seed(time.Now().UnixNano())
 	err := retry(10, 75, 10, func() error {
 		if rand.Float32() > 0.2 {
 			return errors.New("something happened")
